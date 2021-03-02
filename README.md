@@ -34,14 +34,15 @@ More generally, SDN can be used as a drop-in replacement for CNN in any image-ge
 ### Code Structure
 
     .
-    ├── data
-         ├── ImageNet32            # where ImageNet32 data is stored
-         ├── CelebAHQ256           # where Celeb data is stored
-         ├── 3DShapes              # where 3DShapes data is stored
+    ├── checkpoints/               # where the model checkpoints will be stored
+    ├── data/
+         ├── ImageNet32/           # where ImageNet32 data is stored
+         ├── CelebAHQ256/          # where Celeb data is stored
+         ├── 3DShapes/             # where 3DShapes data is stored
          ├── lmdb_datasets.py      # LMDB data loading borrowed from https://github.com/NVlabs/NVAE
          ├── get_dataset.py        # auxiliary script for fetching data sets
-    ├── figs                       # some figures
-    ├── lib
+    ├── figs/                      # figures from the paper
+    ├── lib/
          ├── DensityVAE            # SDN-VAE which we used for density estimation
          ├── DisentanglementVAE    # VAE which we used for disentanglement
          ├── nn.py                 # The script which contains SDN and other neural net modules
@@ -91,18 +92,14 @@ To install all the requirements use:
 pip install -r requirements.txt
 ```
 
-**Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions**
+**Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions as the library is not backward compatible.**
 
-###### CIFAR10
-
-The data will be automatically downloaded through PyTorch. To run the baselines that reproduce the results from the paper use:
+**CIFAR10:** The data will be automatically downloaded through PyTorch. To run the baselines that reproduce the results from the paper use:
 ``` bash
 bash train_cifar.sh
 ```
 
-###### ImageNet32
-
-To obtain the dataset go into the folder 'data/ImageNet32' and then run
+**ImageNet32:** To obtain the dataset go into the folder 'data/ImageNet32' and then run
 ``` bash
 bash get_imagenet_data.sh
 ```
@@ -112,9 +109,7 @@ To reproduce the experiments run:
 bash train_imagenet.sh
 ```
 
-###### CelebAHQ256
-
-To obtain the dataset go into the folder 'data/CelebAHQ256' and then run
+**CelebAHQ256:** To obtain the dataset go into the folder 'data/CelebAHQ256' and then run
 ``` bash
 bash get_celeb_data.sh
 ```
@@ -124,9 +119,7 @@ To reproduce the experiments run:
 bash train_celeb.sh
 ```
 
-###### 3DShapes
-
-TODO: explain
+**3DShapes:** TODO: explain
 ``` bash
 bash train_3dshapes.sh
 ```

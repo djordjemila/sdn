@@ -87,7 +87,8 @@ def main(arguments=None):
                                             terminate_on_nan=True,
                                             checkpoint_callback=checkpoint_callback,
                                             resume_from_checkpoint=detected_checkpoint,
-                                            callbacks=[LearningRateLogger(logging_interval='step')]
+                                            callbacks=[LearningRateLogger(logging_interval='step')],
+                                            benchmark=True
                                             )
 
     print("\nCommencing training:")
