@@ -1,10 +1,10 @@
 <h1>Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling</h1>
 
 <div align="center">
-  <a href="https://djordjemila.github.io/" target="_blank">Đorđe&nbsp;Miladinović</a> &emsp; <b>&middot;</b> &emsp;
-  <a href="https://astanic.github.io/" target="_blank">Aleksandar&nbsp;Stanić</a> &emsp; <b>&middot;</b> &emsp;
-  <a href="https://www.is.mpg.de/~sbauer" target="_blank">Stefan&nbsp;Bauer</a> &emsp; <b>&middot;</b> &emsp;
-  <a href="https://people.idsia.ch/~juergen/" target="_blank">Jürgen&nbsp;Schmidhuber</a> &emsp; <b>&middot;</b> &emsp;
+  <a href="https://djordjemila.github.io/" target="_blank">Đorđe&nbsp;Miladinović</a> &emsp;
+  <a href="https://astanic.github.io/" target="_blank">Aleksandar&nbsp;Stanić</a> &emsp;
+  <a href="https://www.is.mpg.de/~sbauer" target="_blank">Stefan&nbsp;Bauer</a> &emsp;
+  <a href="https://people.idsia.ch/~juergen/" target="_blank">Jürgen&nbsp;Schmidhuber</a> &emsp;
   <a href="https://inf.ethz.ch/people/person-detail.buhmann.html" target="_blank">Joachim&nbsp;M.&nbsp;Buhmann</a>
 </div>
 <br>
