@@ -50,9 +50,9 @@ More generally, SDN can be used as a drop-in replacement for CNN in any image-ge
      ├── train.py                  # generic training script
      ├── evaluate.py               # the script for evaluation of trained models
      ├── train_cifar.sh            # for reproducing CIFAR10 experiments
-     ├── run_celeb.sh              # for reproducing CelebAHQ256 experiments
-     ├── run_imagenet.sh           # for reproducing ImageNet32 experiments
-     ├── run_3dshapes.sh           # for reproducing 3DShapes experiments
+     ├── train_celeb.sh            # for reproducing CelebAHQ256 experiments
+     ├── train_imagenet.sh         # for reproducing ImageNet32 experiments
+     ├── train_3dshapes.sh         # for reproducing 3DShapes experiments
      ├── requirements.txt
      ├── LICENSE
      └── README.md
@@ -109,7 +109,7 @@ bash get_imagenet_data.sh
 The script is adapted from [NVAE repo](https://github.com/NVlabs/NVAE) and is based on [downsampled ImageNet dataset](http://image-net.org/small/download.php).
 To reproduce the experiments run:
 ``` bash
-bash run_imagenet.sh
+bash train_imagenet.sh
 ```
 
 ###### CelebAHQ256
@@ -121,14 +121,14 @@ bash get_celeb_data.sh
 The script is adapted from [NVAE repo](https://github.com/NVlabs/NVAE) and is based on [GLOW dataset](https://github.com/openai/glow).
 To reproduce the experiments run:
 ``` bash
-bash run_celeb.sh
+bash train_celeb.sh
 ```
 
 ###### 3DShapes
 
 TODO: explain
 ``` bash
-bash run_3dshapes.sh
+bash train_3dshapes.sh
 ```
 
 ### Evaluating pre-trained models
