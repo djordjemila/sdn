@@ -148,13 +148,13 @@ def get_parser():
     parser.add_argument('--ds_list', nargs='*', type=int,
                         help='Provided as a list of integers. Indicates at which layers the downsampling is performed.')
     parser.add_argument('--downsample_first', action='store_true', help='Downsample in the first layer of encoder.')
-    # SDN settings
-    parser.add_argument('--sdn_max_scale', type=int, default=64, help='Maximum scale to apply SDN on.')
-    parser.add_argument('--sdn_min_scale', type=int, default=0, help='Minimum scale to apply SDN on.')
-    parser.add_argument('--sdn_nfeat_0', type=int, default=300, help='Number of features at largest-scale SDN.')
+    # SDNLayer settings
+    parser.add_argument('--sdn_max_scale', type=int, default=64, help='Maximum scale to apply SDNLayer on.')
+    parser.add_argument('--sdn_min_scale', type=int, default=0, help='Minimum scale to apply SDNLayer on.')
+    parser.add_argument('--sdn_nfeat_0', type=int, default=300, help='Number of features at largest-scale SDNLayer.')
     parser.add_argument('--sdn_nfeat_diff', type=int, default=0,
-                        help='Each time we downscale, we reduce the number of SDN features by this number.')
-    parser.add_argument('--sdn_num_dirs', type=int, default=1, help='Number of SDN directions.')
+                        help='Each time we downscale, we reduce the number of SDNLayer features by this number.')
+    parser.add_argument('--sdn_num_dirs', type=int, default=1, help='Number of SDNLayer directions.')
 
     return parser
 

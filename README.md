@@ -1,4 +1,4 @@
-<h1>Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling</h1>
+<h1>Spatial Dependency Layers for Improved Generative Image Modeling</h1>
 
 <div align="center">
   <a href="https://djordjemila.github.io/" target="_blank">Đorđe&nbsp;Miladinović</a> &emsp;
@@ -21,12 +21,12 @@
 
 ### Method Description
 
-[Spatial dependency network (SDN)](https://openreview.net/forum?id=I4c4K9vBNny) is a novel architecture (layer) designed for deep neural networks that
+[Spatial dependency network (SDN)](https://openreview.net/forum?id=I4c4K9vBNny) is a novel neural architecture. It is based on spatial dependency layers which are designed for stacking deep neural networks that
 produce images e.g. generative models such as VAEs or GANs or segmentation, super-resolution and image-to-image-translation neural networks.
 SDNs improve upon celebrated CNNs by explicitly modeling spatial dependencies between feature vectors at each level of a deep neural network pipeline.
-SDNs thus (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies.
+Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies.
 In our work we applied SDN to two variants of VAE, one which we used to model image density (SDN-VAE) and one which we used to learn better disentangled representations.
-More generally, SDN can be used as a drop-in replacement for CNN in any image-generation-related tasks.
+More generally, spatial depndency layers can be used as a drop-in replacement for convolutional layers in any image-generation-related tasks.
 
 <div align="center"><img src="figs/sdn.png" width="40%"></div>
 <div align="center"> Graphical model of SDN layer. </div>
@@ -61,7 +61,7 @@ More generally, SDN can be used as a drop-in replacement for CNN in any image-ge
 ### Applying SDN to your neural network
 
 To apply SDN to your framework it is sufficient that you integrate the 'lib/nn.py' file into your code.
-You can then import and utilize SDN or ResSDN (the residual variant) in the same way CNN is utilized.
+You can then import and utilize SDNLayer or ResSDNLayer (the residual variant) in the same way convolutional layer is utilized.
 Apart from [PyTorch](pytorch.org), no additional packages are required.
 
 ###### Tips & Tricks

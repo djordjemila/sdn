@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import GRUCell
-import math
 
 
 class SDNCell(nn.Module):
@@ -15,7 +14,7 @@ class SDNCell(nn.Module):
         return self.gru(torch.cat(neighboring_features, dim=1), features)
 
 
-class _SDNLayer(nn.Module):
+class _CorrectionLayer(nn.Module):
 
     def __init__(self, num_features, dir=0):
         super().__init__()
@@ -105,38 +104,38 @@ class _SDNLayer(nn.Module):
         return features
 
 
-class SDN(nn.Module):
+class SDNLayer(nn.Module):
     def __init__(self, in_ch, out_ch, num_features, dirs, kernel_size, stride, padding, upsample):
         super().__init__()
         # project-in network
         cnn_module = nn.ConvTranspose2d if upsample else nn.Conv2d
-        self.pre_cnn = cnn_module(in_ch, num_features, kernel_size, stride, padding)
+        self.project_in_stage = cnn_module(in_ch, num_features, kernel_size, stride, padding)
         # update network
-        sdn_update_blocks = []
+        sdn_correction_blocks = []
         for dir in dirs:
-            sdn_update_blocks.append(_SDNLayer(num_features, dir=dir))
-        self.sdn_update_network = nn.Sequential(*sdn_update_blocks)
+            sdn_correction_blocks.append(_CorrectionLayer(num_features, dir=dir))
+        self.sdn_correction_stage = nn.Sequential(*sdn_correction_blocks)
         # project-out network
-        self.post_cnn = nn.Conv2d(num_features, out_ch, 1)
+        self.project_out_stage = nn.Conv2d(num_features, out_ch, 1)
 
     def forward(self, x):
         # (I) project-in step
-        x = self.pre_cnn(x)
+        x = self.project_in_stage(x)
         x = torch.tanh(x)
         # (II) update step
         x = x.contiguous(memory_format=torch.channels_last)
-        x = self.sdn_update_network(x)
+        x = self.sdn_correction_stage(x)
         x = x.contiguous(memory_format=torch.contiguous_format)
         # (III) project-out step
-        x = self.post_cnn(x)
+        x = self.project_out_stage(x)
         return x
 
 
-class ResSDN(nn.Module):
+class ResSDNLayer(nn.Module):
 
     def __init__(self, in_ch, out_ch, num_features, dirs, kernel_size, stride, padding, upsample):
         super().__init__()
-        self.sdn = SDN(in_ch, 2 * out_ch, num_features, dirs, kernel_size, stride, padding, upsample)
+        self.sdn = SDNLayer(in_ch, 2 * out_ch, num_features, dirs, kernel_size, stride, padding, upsample)
         cnn_module = nn.ConvTranspose2d if upsample else nn.Conv2d
         self.cnn = cnn_module(in_ch, out_ch, kernel_size, stride, padding)
 
@@ -173,11 +172,11 @@ class LadderLayer(nn.Module):
         # create modules for top-down pass
         self.down_a_layout = [h_size, z_size * post_model.params_per_dim(), z_size * prior_model.params_per_dim()]
         if use_sdn:
-            self.down_a = ResSDN(in_ch=h_size, out_ch=sum(self.down_a_layout), num_features=sdn_num_features,
-                                 dirs=sdn_dirs_a, kernel_size=3, stride=1, padding=1, upsample=False)
-            self.down_b = ResSDN(in_ch=h_size + z_size, out_ch=2 * h_size, num_features=sdn_num_features,
-                                 dirs=sdn_dirs_b, kernel_size=kernel_size, stride=stride, padding=padding,
-                                 upsample=downsample)
+            self.down_a = ResSDNLayer(in_ch=h_size, out_ch=sum(self.down_a_layout), num_features=sdn_num_features,
+                                      dirs=sdn_dirs_a, kernel_size=3, stride=1, padding=1, upsample=False)
+            self.down_b = ResSDNLayer(in_ch=h_size + z_size, out_ch=2 * h_size, num_features=sdn_num_features,
+                                      dirs=sdn_dirs_b, kernel_size=kernel_size, stride=stride, padding=padding,
+                                      upsample=downsample)
         else:
             self.down_a = nn.Conv2d(h_size, sum(self.down_a_layout), 3, 1, 1)
             cnn_module = nn.ConvTranspose2d if downsample else nn.Conv2d

@@ -1,7 +1,7 @@
 from lib.utils import Crop2d, weights_init, WN, EMA, terminate_on_nan, list2string
 from torch.optim import Adamax
 from lib.probability import *
-from lib.nn import LadderLayer, ResSDN
+from lib.nn import LadderLayer, ResSDNLayer
 from data.get_dataset import get_dataset, get_dataset_specifications
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader
@@ -62,7 +62,7 @@ class DensityVAE(pl.LightningModule):
         # padding for 28x28 images
         extra_padding = 0 if image_size != 28 else 2
 
-        # keeping track of SDN directions and number of channels, and also of current scale
+        # keeping track of SDNLayer directions and number of channels, and also of current scale
         self.cur_dir = 0
         cur_num_feat = sdn_nfeat_0
         top_input_dim = (image_size + 2 * extra_padding)
@@ -113,9 +113,9 @@ class DensityVAE(pl.LightningModule):
             self.last_layer = nn.Sequential(
                 Crop2d(extra_padding),
                 nn.ELU(True),
-                ResSDN(in_ch=h_size, out_ch=self.obs_model.params_per_dim(), num_features=sdn_nfeat_0,
-                       dirs=self._get_dirs(4), kernel_size=bot_kernel_size, stride=bot_stride, padding=bot_padding,
-                       upsample=downsample_first)
+                ResSDNLayer(in_ch=h_size, out_ch=self.obs_model.params_per_dim(), num_features=sdn_nfeat_0,
+                            dirs=self._get_dirs(4), kernel_size=bot_kernel_size, stride=bot_stride, padding=bot_padding,
+                            upsample=downsample_first)
             )
         else:
             cnn_module = nn.ConvTranspose2d if downsample_first else nn.Conv2d

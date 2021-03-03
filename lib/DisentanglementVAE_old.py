@@ -2,7 +2,7 @@
 
 
 from torch.utils.data import DataLoader
-from lib.utils import weights_init, terminate_on_nan, Flatten3D, EncWrapper, Reshape4x4, Contiguous
+from lib.utils import weights_init, terminate_on_nan, Flatten3D, Unsqueeze3D
 from torch.optim import Adamax
 from lib.probability import *
 from lib.nn import SDNLayer
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 class DisentanglementVAE(pl.LightningModule):
 
     def __init__(self, z_size, h_size, post_model, prior_model, obs_model, mix_components, min_scale_sdn, max_scale_sdn,
-                 state0, delta_state, num_dirs, beta_rate, beta_final, lrate, root, dataset, num_workers, batch, random_seed, nbits,
+                 state0, delta_state, num_dirs, beta_rate, lrate, root, dataset, num_workers, batch, random_seed, nbits,
                  figsize, **kw):
 
         super().__init__()
@@ -31,8 +31,8 @@ class DisentanglementVAE(pl.LightningModule):
         self.z_size = z_size
         self.h_size = h_size
         self.beta_rate = beta_rate
-        self.beta_final = beta_final
         self.beta_current = 0  # => KL annealing
+        self.beta = 1  # => vanilla VAE
         self.obs_model_name = obs_model
         self.post_model_name = post_model
         self.mix_components = mix_components
@@ -59,94 +59,42 @@ class DisentanglementVAE(pl.LightningModule):
 
         # keeping track of SDNLayer directions and state sizes, and also of current scale
         self.cur_dir = 0
-
-        encoder_list, decoder_list = self.create_enc_dec_networks(channels, state0)
-
-        self.encoder = EncWrapper(encoder_list)
+        current_state = state0
+        current_scale = image_size
+        current_num_channels = channels
+        # build encoder and decoder of the VAE
+        encoder_list = []
+        decoder_list = []
+        while current_scale >= 2:
+            # add encoder elements
+            encoder_list.append(nn.Conv2d(current_num_channels, h_size, 4, 2, 1))
+            encoder_list.append(nn.ReLU(True))
+            # add mirrored decoder elements
+            dec_out_ch = current_num_channels if decoder_list else self.obs_model.params_per_dim()
+            if min_scale_sdn <= current_scale <= max_scale_sdn:
+                dirs = self._get_dirs(num_dirs)
+                decoder_list.insert(0, SDNLayer(h_size, dec_out_ch, current_state, dirs, 4, 2, 1, True))
+                current_state = current_state - delta_state
+            else:
+                decoder_list.insert(0, nn.ConvTranspose2d(h_size, dec_out_ch, 4, 2, 1))
+            decoder_list.insert(0, nn.ReLU(True))
+            # update number of states, channels and scale
+            current_scale = current_scale // 2
+            current_num_channels = h_size
+            h_size = min(256, h_size * 2)
+        top_dim = current_num_channels * current_scale * current_scale
+        encoder_list.append(Flatten3D())
+        encoder_list.append(nn.Linear(top_dim, z_size * self.post_model.params_per_dim()))
+        decoder_list.insert(0, nn.ConvTranspose2d(z_size, current_num_channels, 1, 2))
+        decoder_list.insert(0, Unsqueeze3D())
+        self.encoder = nn.Sequential(*encoder_list)
         self.decoder = nn.Sequential(*decoder_list)
-
-        print(self.encoder)
-        print(self.decoder)
 
         # beta vae loss by default
         self.vae_loss = self.beta_vae_loss
 
         # initialize weights
         self.apply(weights_init)
-
-        # Evaluate disentanglement metrics and related vars
-        self.num_channels = channels
-        self.image_size = image_size
-        self.evaluation_metric = ['factor_vae_metric', 'beta_vae_sklearn']
-
-    def create_enc_dec_networks(self, channels, state0):
-        padding = 1
-
-        # add encoder elements
-        encoder_list = []
-        ks = 4
-        encoder_list.append(nn.Conv2d(channels, 32, ks, 2, padding))
-        encoder_list.append(nn.ReLU(True)) # 32
-        encoder_list.append(nn.Conv2d(32, 32, ks, 2, padding))
-        encoder_list.append(nn.ReLU(True)) # 16
-        encoder_list.append(nn.Conv2d(32, 64, ks, 2, padding))
-        encoder_list.append(nn.ReLU(True)) # 8
-        encoder_list.append(nn.Conv2d(64, 64, ks, 2, padding))
-        encoder_list.append(nn.ReLU(True)) # 4
-        top_dim = 64 * 4 * 4
-        encoder_list.append(Contiguous())
-        encoder_list.append(Flatten3D())
-        encoder_list.append(nn.Linear(top_dim, self.z_size * self.post_model.params_per_dim()))
-
-        # add decoder elements
-        h_size = self.h_size
-        current_state = state0
-        decoder_list = []
-        decoder_list.append(nn.Linear(self.z_size, 256))
-        decoder_list.append(nn.ReLU(True))
-        decoder_list.append(nn.Linear(256, 4*4*64))
-        decoder_list.append(nn.ReLU(True))
-        decoder_list.append(Reshape4x4())
-        current_out_scale = 8
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
-            decoder_list.append(SDNLayer(64, 64, current_state, dirs, 4, 2, 1, True))
-            decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
-        else:
-            decoder_list.append(nn.ConvTranspose2d(64, 64, 4, 2, 1))
-            decoder_list.append(nn.ReLU(True))
-
-        current_out_scale *= 2 # 16
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
-            decoder_list.append(SDNLayer(64, 32, current_state, dirs, 4, 2, 1, True))
-            decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
-        else:
-            decoder_list.append(nn.ConvTranspose2d(64, 32, 4, 2, 1))
-            decoder_list.append(nn.ReLU(True))
-
-        current_out_scale *= 2 # 32
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
-            decoder_list.append(SDNLayer(32, 32, current_state, dirs, 4, 2, 1, True))
-            decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
-        else:
-            decoder_list.append(nn.ConvTranspose2d(32, 32, 4, 2, 1))
-            decoder_list.append(nn.ReLU(True))
-
-        dec_out_ch = self.obs_model.params_per_dim()
-        current_out_scale *= 2 # 64
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
-            decoder_list.append(SDNLayer(32, dec_out_ch, current_state, dirs, 4, 2, 1, True))
-            current_state = current_state - self.delta_state
-        else:
-            decoder_list.append(nn.ConvTranspose2d(32, dec_out_ch, 4, 2, 1))
-
-        return encoder_list, decoder_list
 
     # -----------------------------------------------------
     # PyTorch Lightning-related methods
@@ -163,21 +111,21 @@ class DisentanglementVAE(pl.LightningModule):
         loss = torch.stack([x['loss'] for x in outputs]).mean() / self.bpd_factor
         kld = torch.stack([x['kld'] for x in outputs]).mean() / self.bpd_factor
         elbo = torch.stack([x['elbo'] for x in outputs]).mean() / self.bpd_factor
-        self.logger[0].experiment.add_scalar('Train total loss [BPD]', loss, self.global_step)
-        self.logger[0].experiment.add_scalar('Train KLD loss [BPD]', kld, self.global_step)
-        self.logger[0].experiment.add_scalar('Train negative elbo [BPD]', -elbo, self.global_step)
-        self.logger[0].experiment.add_figure("Reconstruction:", self.evaluate_reconstruction(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Sampling:", self.evaluate_sampling(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Interpolation", self.evaluate_latent_interpolation(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Traversal", self.evaluate_latent_traversal(), self.global_step, True)
+        self.logger.experiment.add_scalar('Train total loss [BPD]', loss, self.global_step)
+        self.logger.experiment.add_scalar('Train KLD loss [BPD]', kld, self.global_step)
+        self.logger.experiment.add_scalar('Train negative elbo [BPD]', -elbo, self.global_step)
+        self.logger.experiment.add_figure("Reconstruction:", self.evaluate_reconstruction(), self.global_step, True)
+        self.logger.experiment.add_figure("Sampling:", self.evaluate_sampling(), self.global_step, True)
+        self.logger.experiment.add_figure("Interpolation", self.evaluate_latent_interpolation(), self.global_step, True)
+        self.logger.experiment.add_figure("Traversal", self.evaluate_latent_traversal(), self.global_step, True)
         print("Train total loss", loss, " in iteration ", self.global_step)
-
-        # Evaluate disentanglement metrics here
-
         return {'train_loss': loss}
 
     def validation_step(self, batch, batch_idx):
         return {'total_loss': 0}
+
+    def validation_epoch_end(self, outputs):
+        return {'val_loss': 0}
 
     def configure_optimizers(self):
         optimizer = Adamax(self.parameters(), lr=self.lrate)
@@ -200,11 +148,10 @@ class DisentanglementVAE(pl.LightningModule):
     # -----------------------------------------------------
 
     def signature(self):
-        return '_data-{}_lr-{}_seed-{}_z-{}_max-{}_min-{}_s0-{}_sd-{}_d-{}_{}_ann-{}_beta-{}' \
-               .format(self.dataset, self.lrate, self.random_seed,
-                       self.z_size, self.max_scale_sdn, self.min_scale_sdn,
-                       self.state0, self.delta_state, self.num_dirs,
-                       self.obs_model_name, self.beta_rate, self.beta_final)
+        return '_data-{}_lr-{}_seed-{}_z-{}_max-{}_min-{}_s0-{}_sd-{}_d-{}_b-{}_h-{}_nw-{}_{}_ann-{}' \
+               .format(self.dataset, self.lrate, self.random_seed, self.z_size, self.max_scale_sdn, self.min_scale_sdn,
+                       self.state0, self.delta_state, self.num_dirs, self.batch, self.h_size, self.num_workers,
+                       self.obs_model_name, self.beta_rate)
 
     def _get_dirs(self, num_dirs):
         ret_dirs = list(np.arange(self.cur_dir, self.cur_dir + num_dirs, 1) % 4)
@@ -219,10 +166,10 @@ class DisentanglementVAE(pl.LightningModule):
     # -----------------------------------------------------
 
     def process_input(self, input):
-        # # encode
-        mu, logvar = self.encoder(input)
+        # encode
+        z_params = self.encoder(input)
         # reparametrize and compute KL components
-        z, logqzx = self.post_model.reparameterize(self.encoder.z_params)
+        z, logqzx = self.post_model.reparameterize(z_params)
         logpz = self.prior_model.log_prob(z)
         # decode
         x_params = self.decoder(z)
@@ -237,7 +184,7 @@ class DisentanglementVAE(pl.LightningModule):
 
     def forward(self, input):
         if self.training:
-            self.beta_current = min(self.beta_final, self.beta_current + self.beta_rate * self.beta_final)
+            self.beta_current = min(self.beta, self.beta_current + self.beta_rate)
         output = self.process_input(input)
         loss = self.vae_loss(output)
         return loss, output['kld'], output['elbo']
@@ -249,8 +196,8 @@ class DisentanglementVAE(pl.LightningModule):
 
     @torch.no_grad()
     def encode(self, input):
-        mu, logvar = self.encoder(input)
-        return self.post_model.get_most_probable_output(self.encoder.z_params)
+        z_params = self.encoder(input)
+        return self.post_model.get_most_probable_output(z_params)
 
     @torch.no_grad()
     def decode(self, z):
