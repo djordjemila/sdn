@@ -1,0 +1,17 @@
+/.idea
+*tfevents*
+/visualizations
+/data/MNIST
+/data/CIFAR
+*.npy
+*pycache*
+*.avi
+*.pyc
+*.gz
+*.ml
+*.pt
+*.ckpt
+*.lmdb
+*.yaml
+tmp.py
+*.h5

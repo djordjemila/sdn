@@ -124,7 +124,16 @@ bash train_celeb.sh
 bash train_3dshapes.sh
 ```
 
-### Evaluating pre-trained models
+### Evaluation of pre-trained models
+
+To perform post hoc evaluation of your pre-trained models, use 'evaluate.py' script and select flags corresponding to
+the evaluation task and the model you want to use. For the CelebAHQ256 dataset, you can also download the checkpoint
+which contains one of the pre-trained models that we used in the paper.
+Follow the [link](https://drive.google.com/file/d/1wIQTHS5S_j9ixIQrKHmliPwgdLwG35WQ/view?usp=sharing). For example, you
+can evaluate elbo and generate random samples by running:
+``` python
+python3 evaluate.py --model CelebAHQ256 --elbo --sampling
+```
 
 ### Citation
 
