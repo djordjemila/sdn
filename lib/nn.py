@@ -110,23 +110,23 @@ class SDNLayer(nn.Module):
         # project-in network
         cnn_module = nn.ConvTranspose2d if upsample else nn.Conv2d
         self.project_in_stage = cnn_module(in_ch, num_features, kernel_size, stride, padding)
-        # update network
-        sdn_correction_blocks = []
+        # correction network
+        sdn_correction_layers = []
         for dir in dirs:
-            sdn_correction_blocks.append(_CorrectionLayer(num_features, dir=dir))
-        self.sdn_correction_stage = nn.Sequential(*sdn_correction_blocks)
+            sdn_correction_layers.append(_CorrectionLayer(num_features, dir=dir))
+        self.sdn_correction_stage = nn.Sequential(*sdn_correction_layers)
         # project-out network
         self.project_out_stage = nn.Conv2d(num_features, out_ch, 1)
 
     def forward(self, x):
-        # (I) project-in step
+        # (I) project-in stage
         x = self.project_in_stage(x)
         x = torch.tanh(x)
-        # (II) update step
+        # (II) update stage
         x = x.contiguous(memory_format=torch.channels_last)
         x = self.sdn_correction_stage(x)
         x = x.contiguous(memory_format=torch.contiguous_format)
-        # (III) project-out step
+        # (III) project-out stage
         x = self.project_out_stage(x)
         return x
 
