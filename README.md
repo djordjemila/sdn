@@ -76,8 +76,6 @@ If you would like to integrate SDN into your neural network, we recommend the fo
 
 ### Reproducing the experiments from the paper
 
-###### Requirements
-
 Common to all experiments, you will need to install [PyTorch](pytorch.org) and [PyTorchLightning](https://github.com/PyTorchLightning/pytorch-lightning).
 The default logging system is based on [Wandb](https://wandb.ai/site) but this can be changed in 'train.py'.
 In case you decide to use Wandb, you will need to install it and then login into your account: Follow a very simple procedure described [here](https://docs.wandb.ai/examples).
@@ -92,37 +90,52 @@ To install all the requirements use:
 pip install -r requirements.txt
 ```
 
-**Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions as the library is not backward compatible.**
+*Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions as the library is not backward compatible.*
 
-**CIFAR10:** The data will be automatically downloaded through PyTorch. To run the baselines that reproduce the results from the paper use:
-``` bash
+
+<details><summary>CIFAR10</summary>
+
+The data will be automatically downloaded through PyTorch. To run the baselines that reproduce the results from the paper use:
+
+```bash
 bash train_cifar.sh
 ```
+</details>
 
-**ImageNet32:** To obtain the dataset go into the folder 'data/ImageNet32' and then run
-``` bash
+<details><summary>ImageNet32</summary>
+
+To obtain the dataset go into the folder 'data/ImageNet32' and then run
+
+```bash
 bash get_imagenet_data.sh
 ```
-The script is adapted from [NVAE repo](https://github.com/NVlabs/NVAE) and is based on [downsampled ImageNet dataset](http://image-net.org/small/download.php).
 To reproduce the experiments run:
+
 ``` bash
 bash train_imagenet.sh
 ```
+</details>
 
-**CelebAHQ256:** To obtain the dataset go into the folder 'data/CelebAHQ256' and then run
+<details><summary>CelebAHQ256</summary>
+
+To obtain the dataset go into the folder 'data/CelebAHQ256' and then run
+
 ``` bash
 bash get_celeb_data.sh
 ```
 The script is adapted from [NVAE repo](https://github.com/NVlabs/NVAE) and is based on [GLOW dataset](https://github.com/openai/glow).
 To reproduce the experiments run:
+
 ``` bash
 bash train_celeb.sh
 ```
+</details>
 
-**3DShapes:** TODO: explain
-``` bash
-bash train_3dshapes.sh
-```
+
+<details><summary>3DShapes</summary>
+Coming soon.
+</details>
+
 
 ### Evaluation of pre-trained models
 
