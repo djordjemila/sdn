@@ -122,7 +122,7 @@ class SDNLayer(nn.Module):
         # (I) project-in stage
         x = self.project_in_stage(x)
         x = torch.tanh(x)
-        # (II) update stage
+        # (II) correction stage
         x = x.contiguous(memory_format=torch.channels_last)
         x = self.sdn_correction_stage(x)
         x = x.contiguous(memory_format=torch.contiguous_format)
