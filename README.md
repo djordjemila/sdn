@@ -24,9 +24,10 @@
 [Spatial dependency network (SDN)](https://openreview.net/forum?id=I4c4K9vBNny) is a novel neural architecture. It is based on spatial dependency layers which are designed for stacking deep neural networks that
 produce images e.g. generative models such as VAEs or GANs or segmentation, super-resolution and image-to-image-translation neural networks.
 SDNs improve upon celebrated CNNs by explicitly modeling spatial dependencies between feature vectors at each level of a deep neural network pipeline.
-Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies.
-In our work we applied SDN to two variants of VAE, one which we used to model image density (SDN-VAE) and one which we used to learn better disentangled representations.
-More generally, spatial dependency layers can be used as a drop-in replacement for convolutional layers in any image-generation-related tasks.
+Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies 
+due to the unbounded receptive field. We applied SDN to two variants of VAE, one which we used to model image density (SDN-VAE) and one which we used 
+to learn better disentangled representations. More generally, spatial dependency layers can be used as a drop-in replacement for convolutional layers 
+in any image-generation-related tasks.
 
 <div align="center"><img src="figs/sdn.png" width="40%"></div>
 <div align="center"> Graphical model of SDN layer. </div>
