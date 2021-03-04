@@ -59,9 +59,9 @@ in any image-generation-related tasks.
      ├── LICENSE
      └── README.md
 
-### Applying SDN to your neural network
+### Applying SDN layers to your neural network
 
-To apply SDN to your framework it is sufficient that you integrate the 'lib/nn.py' file into your code.
+To apply SDN layers to your framework it is sufficient that you integrate the 'lib/nn.py' file into your code.
 You can then import and utilize SDNLayer or ResSDNLayer (the residual variant) in the same way convolutional layer is utilized.
 Apart from [PyTorch](pytorch.org), no additional packages are required.
 
