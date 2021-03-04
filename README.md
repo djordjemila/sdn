@@ -138,9 +138,9 @@ Coming soon.
 </details>
 
 
-### Evaluation of pre-trained models
+### Evaluation of trained models
 
-To perform post hoc evaluation of your pre-trained models, use 'evaluate.py' script and select flags corresponding to
+To perform post hoc evaluation of your trained models, use 'evaluate.py' script and select flags corresponding to
 the evaluation task and the model you want to use. The evaluation can be performed on a single GPU of any type, though 
 note that the batch size needs to be modified dependent on the available GPU memory. For the CelebAHQ256 dataset, 
 you can download the checkpoint which contains one of the pre-trained models that we used in the paper from [this link](https://drive.google.com/file/d/1wIQTHS5S_j9ixIQrKHmliPwgdLwG35WQ/view?usp=sharing). For example, you
