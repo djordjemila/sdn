@@ -163,3 +163,8 @@ year={2021},
 url={https://openreview.net/forum?id=I4c4K9vBNny}
 }
 ```
+Note that you might need to include the following line in your latex file:
+
+```
+\usepackage[T1]{fontenc}
+```
