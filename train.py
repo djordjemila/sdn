@@ -3,7 +3,7 @@ import datetime
 import matplotlib
 matplotlib.use('Agg')
 from lib.DensityVAE import DensityVAE
-from lib.DisentanglementVAE_old import DisentanglementVAE
+from lib.DisentanglementVAE import DisentanglementVAE
 from lib.utils import run_cuda_diagnostics
 import time
 import torch
