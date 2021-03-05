@@ -15,3 +15,9 @@
 *.yaml
 tmp.py
 *.h5
+wandb
+metrics
+data/cifar-10-batches-py
+aicrowd/
+dis_lib_edits/
+

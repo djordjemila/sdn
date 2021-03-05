@@ -1,8 +1,5 @@
-""" VAE for learning disentangled representations. """
-
-
 from torch.utils.data import DataLoader
-from lib.utils import weights_init, terminate_on_nan, Flatten3D, EncWrapper, Reshape4x4, Contiguous
+from lib.utils import weights_init, terminate_on_nan, Flatten3D, EncWrapper, Reshape4x4, Contiguous, list2string
 from torch.optim import Adamax
 from lib.probability import *
 from lib.nn import SDNLayer
@@ -12,22 +9,32 @@ import matplotlib.pyplot as plt
 
 
 class DisentanglementVAE(pl.LightningModule):
-
-    def __init__(self, z_size, h_size, post_model, prior_model, obs_model, mix_components, min_scale_sdn, max_scale_sdn,
-                 state0, delta_state, num_dirs, beta_rate, beta_final, lrate, root, dataset, num_workers, batch, random_seed, nbits,
-                 figsize, **kw):
+    def __init__(self, z_size, post_model, prior_model, obs_model, mix_components, free_bits, h_size, depth,
+                 ds_list, sdn_max_scale, sdn_min_scale, sdn_nfeat_0, sdn_nfeat_diff, sdn_num_dirs, lrate, lrate_decay, root,
+                 dataset, num_workers, batch, batch_val, ema_coef, random_seed, downsample_first, sampling_temperature,
+                 distributed_backend, amp, gpus, nbits, figsize, evaluation_mode, accumulate_grad_batches,
+                 beta_rate, beta_final, **kw):
 
         super().__init__()
         self.save_hyperparameters()
 
+        # create model signature
+        self.signature_string = \
+            '_amp-{}_gpus-{}_lr-{}_lrd-{}_seed-{}_z-{}_max-{}_min-{}_nf0-{}_nfdif-{}_d-{}_b-{}_fb-{}_h-{}_depth-{}_' \
+            'ds-{}-dsf-{}_ema-{}_tmp-{}_nw-{}-{}-{}-{}_mx-{}_bits-{}_ab-{}_bv-{}' \
+            .format(amp, gpus, lrate, lrate_decay, random_seed, z_size, sdn_max_scale, sdn_min_scale, sdn_nfeat_0, sdn_nfeat_diff,
+                    sdn_num_dirs, batch, free_bits, h_size, depth, list2string(ds_list), downsample_first, ema_coef,
+                    sampling_temperature, num_workers, obs_model, post_model, distributed_backend, mix_components,
+                    nbits, accumulate_grad_batches, batch_val)
+
         # initialize variables
         self.lrate = lrate
         self.random_seed = random_seed
-        self.max_scale_sdn = max_scale_sdn
-        self.min_scale_sdn = min_scale_sdn
-        self.state0 = state0
-        self.delta_state = delta_state
-        self.num_dirs = num_dirs
+        self.sdn_max_scale = sdn_max_scale
+        self.sdn_min_scale = sdn_min_scale
+        self.sdn_nfeat_0 = sdn_nfeat_0
+        self.sdn_nfeat_diff = sdn_nfeat_diff
+        self.sdn_num_dirs = sdn_num_dirs
         self.z_size = z_size
         self.h_size = h_size
         self.beta_rate = beta_rate
@@ -60,7 +67,7 @@ class DisentanglementVAE(pl.LightningModule):
         # keeping track of SDNLayer directions and state sizes, and also of current scale
         self.cur_dir = 0
 
-        encoder_list, decoder_list = self.create_enc_dec_networks(channels, state0)
+        encoder_list, decoder_list = self.create_enc_dec_networks(channels, sdn_nfeat_0)
 
         self.encoder = EncWrapper(encoder_list)
         self.decoder = nn.Sequential(*decoder_list)
@@ -79,7 +86,7 @@ class DisentanglementVAE(pl.LightningModule):
         self.image_size = image_size
         self.evaluation_metric = ['factor_vae_metric', 'beta_vae_sklearn']
 
-    def create_enc_dec_networks(self, channels, state0):
+    def create_enc_dec_networks(self, channels, sdn_nfeat_0):
         padding = 1
 
         # add encoder elements
@@ -100,7 +107,7 @@ class DisentanglementVAE(pl.LightningModule):
 
         # add decoder elements
         h_size = self.h_size
-        current_state = state0
+        current_state = sdn_nfeat_0
         decoder_list = []
         decoder_list.append(nn.Linear(self.z_size, 256))
         decoder_list.append(nn.ReLU(True))
@@ -108,39 +115,39 @@ class DisentanglementVAE(pl.LightningModule):
         decoder_list.append(nn.ReLU(True))
         decoder_list.append(Reshape4x4())
         current_out_scale = 8
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
+        if self.sdn_min_scale <= current_out_scale <= self.sdn_max_scale:
             dirs = self._get_dirs(self.num_dirs)
             decoder_list.append(SDNLayer(64, 64, current_state, dirs, 4, 2, 1, True))
             decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
+            current_state = current_state - self.sdn_nfeat_diff
         else:
             decoder_list.append(nn.ConvTranspose2d(64, 64, 4, 2, 1))
             decoder_list.append(nn.ReLU(True))
 
         current_out_scale *= 2 # 16
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
+        if self.sdn_min_scale <= current_out_scale <= self.sdn_max_scale:
+            dirs = self._get_dirs(self.sdn_num_dirs)
             decoder_list.append(SDNLayer(64, 32, current_state, dirs, 4, 2, 1, True))
             decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
+            current_state = current_state - self.sdn_nfeat_diff
         else:
             decoder_list.append(nn.ConvTranspose2d(64, 32, 4, 2, 1))
             decoder_list.append(nn.ReLU(True))
 
         current_out_scale *= 2 # 32
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
+        if self.sdn_min_scale <= current_out_scale <= self.sdn_max_scale:
+            dirs = self._get_dirs(self.sdn_num_dirs)
             decoder_list.append(SDNLayer(32, 32, current_state, dirs, 4, 2, 1, True))
             decoder_list.append(nn.ReLU(True))
-            current_state = current_state - self.delta_state
+            current_state = current_state - self.sdn_nfeat_diff
         else:
             decoder_list.append(nn.ConvTranspose2d(32, 32, 4, 2, 1))
             decoder_list.append(nn.ReLU(True))
 
         dec_out_ch = self.obs_model.params_per_dim()
         current_out_scale *= 2 # 64
-        if self.min_scale_sdn <= current_out_scale <= self.max_scale_sdn:
-            dirs = self._get_dirs(self.num_dirs)
+        if self.sdn_min_scale <= current_out_scale <= self.sdn_max_scale:
+            dirs = self._get_dirs(self.sdn_num_dirs)
             decoder_list.append(SDNLayer(32, dec_out_ch, current_state, dirs, 4, 2, 1, True))
             current_state = current_state - self.delta_state
         else:
@@ -163,16 +170,15 @@ class DisentanglementVAE(pl.LightningModule):
         loss = torch.stack([x['loss'] for x in outputs]).mean() / self.bpd_factor
         kld = torch.stack([x['kld'] for x in outputs]).mean() / self.bpd_factor
         elbo = torch.stack([x['elbo'] for x in outputs]).mean() / self.bpd_factor
-        self.logger[0].experiment.add_scalar('Train total loss [BPD]', loss, self.global_step)
-        self.logger[0].experiment.add_scalar('Train KLD loss [BPD]', kld, self.global_step)
-        self.logger[0].experiment.add_scalar('Train negative elbo [BPD]', -elbo, self.global_step)
-        self.logger[0].experiment.add_figure("Reconstruction:", self.evaluate_reconstruction(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Sampling:", self.evaluate_sampling(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Interpolation", self.evaluate_latent_interpolation(), self.global_step, True)
-        self.logger[0].experiment.add_figure("Traversal", self.evaluate_latent_traversal(), self.global_step, True)
-        print("Train total loss", loss, " in iteration ", self.global_step)
-
-        # Evaluate disentanglement metrics here
+        self.logger.log_metrics({'Iteration': self.global_step,
+                                 'Train total loss [BPD]': loss,
+                                 'Train KLD loss [BPD]': kld,
+                                 'Train negative elbo [BPD]': -elbo,
+                                 "Reconstruction:": self.evaluate_reconstruction(),
+                                 "Sampling:": self.evaluate_sampling(),
+                                 "Interpolation": self.evaluate_latent_interpolation(),
+                                 "Traversal": self.evaluate_latent_traversal()})
+        print("Train total loss", loss, " in iteration ")
 
         return {'train_loss': loss}
 
@@ -199,16 +205,13 @@ class DisentanglementVAE(pl.LightningModule):
     # Auxiliary methods
     # -----------------------------------------------------
 
+    @property
     def signature(self):
-        return '_data-{}_lr-{}_seed-{}_z-{}_max-{}_min-{}_s0-{}_sd-{}_d-{}_{}_ann-{}_beta-{}' \
-               .format(self.dataset, self.lrate, self.random_seed,
-                       self.z_size, self.max_scale_sdn, self.min_scale_sdn,
-                       self.state0, self.delta_state, self.num_dirs,
-                       self.obs_model_name, self.beta_rate, self.beta_final)
+        return self.signature_string
 
-    def _get_dirs(self, num_dirs):
-        ret_dirs = list(np.arange(self.cur_dir, self.cur_dir + num_dirs, 1) % 4)
-        self.cur_dir = (self.cur_dir + num_dirs) % 4
+    def _get_dirs(self, sdn_num_dirs):
+        ret_dirs = list(np.arange(self.cur_dir, self.cur_dir + sdn_num_dirs, 1) % 4)
+        self.cur_dir = (self.cur_dir + sdn_num_dirs) % 4
         return ret_dirs
 
     def trainset_size(self):
@@ -358,4 +361,4 @@ class DisentanglementVAE(pl.LightningModule):
                 z_tmp = z.clone()
                 z_tmp[0, i] = z_dim
                 image_grid[:, i*H:(i+1)*H, (1+idx)*W:(2+idx)*W] = self.decode(z_tmp)[0]
-        return self.visualize_sample(image_grid, figsize=(10, 12))
+        return self.visualize_sample(image_grid, figsize=(10, 12))        

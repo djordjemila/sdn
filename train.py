@@ -143,6 +143,7 @@ def get_parser():
                         help='Observation model. Supported are DML or DL at the moment.')
     parser.add_argument('--mix_components', type=int, default=30, help='Number of mixture components, for DML.')
     parser.add_argument('--ema_coef', type=float, default=1, help='Exponential moving average (EMA) coefficient.')
+    parser.add_argument('--beta_final', type=float, default=1, help='Final beta value.')
     parser.add_argument('--beta_rate', type=float, default=1,
                         help='KL annealing rate: the per iteration increment. 1 means there is no KL annealing.')
     parser.add_argument('--ds_list', nargs='*', type=int,

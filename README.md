@@ -134,7 +134,13 @@ bash train_celeb.sh
 
 
 <details><summary>3DShapes</summary>
-Coming soon.
+To obtain the dataset follow the instructions on this [GitHub repo](https://github.com/deepmind/3d-shapes#download-data-file-from-google-cloud-storage).
+Place it into the 'data/3DShapes' directory.
+To reproduce the experiments run:
+
+``` bash
+bash train_3dshapes.sh
+```
 </details>
 
 
