@@ -24,9 +24,10 @@
 [Spatial dependency network (SDN)](https://openreview.net/forum?id=I4c4K9vBNny) is a novel neural architecture. It is based on spatial dependency layers which are designed for stacking deep neural networks that
 produce images e.g. generative models such as VAEs or GANs or segmentation, super-resolution and image-to-image-translation neural networks.
 SDNs improve upon celebrated CNNs by explicitly modeling spatial dependencies between feature vectors at each level of a deep neural network pipeline.
-Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies.
-In our work we applied SDN to two variants of VAE, one which we used to model image density (SDN-VAE) and one which we used to learn better disentangled representations.
-More generally, spatial dependency layers can be used as a drop-in replacement for convolutional layers in any image-generation-related tasks.
+Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies 
+due to the unbounded receptive field. We applied SDN to two variants of VAE, one which we used to model image density (SDN-VAE) and one which we used 
+to learn better disentangled representations. More generally, spatial dependency layers can be used as a drop-in replacement for convolutional layers 
+in any image-generation-related tasks.
 
 <div align="center"><img src="figs/sdn.png" width="40%"></div>
 <div align="center"> Graphical model of SDN layer. </div>
@@ -58,9 +59,9 @@ More generally, spatial dependency layers can be used as a drop-in replacement f
      ├── LICENSE
      └── README.md
 
-### Applying SDN to your neural network
+### Applying SDN layers to your neural network
 
-To apply SDN to your framework it is sufficient that you integrate the 'lib/nn.py' file into your code.
+To apply SDN layers to your framework it is sufficient that you integrate the 'lib/nn.py' file into your code.
 You can then import and utilize SDNLayer or ResSDNLayer (the residual variant) in the same way convolutional layer is utilized.
 Apart from [PyTorch](pytorch.org), no additional packages are required.
 
@@ -137,12 +138,12 @@ Coming soon.
 </details>
 
 
-### Evaluation of pre-trained models
+### Evaluation of trained models
 
-To perform post hoc evaluation of your pre-trained models, use 'evaluate.py' script and select flags corresponding to
-the evaluation task and the model you want to use. For the CelebAHQ256 dataset, you can also download the checkpoint
-which contains one of the pre-trained models that we used in the paper.
-Follow the [link](https://drive.google.com/file/d/1wIQTHS5S_j9ixIQrKHmliPwgdLwG35WQ/view?usp=sharing). For example, you
+To perform post hoc evaluation of your trained models, use 'evaluate.py' script and select flags corresponding to
+the evaluation task and the model you want to use. The evaluation can be performed on a single GPU of any type, though 
+note that the batch size needs to be modified dependent on the available GPU memory. For the CelebAHQ256 dataset, 
+you can download the checkpoint which contains one of the pre-trained models that we used in the paper from [this link](https://drive.google.com/file/d/1wIQTHS5S_j9ixIQrKHmliPwgdLwG35WQ/view?usp=sharing). For example, you
 can evaluate elbo and generate random samples by running:
 ``` python
 python3 evaluate.py --model CelebAHQ256 --elbo --sampling
@@ -161,4 +162,9 @@ booktitle={International Conference on Learning Representations},
 year={2021},
 url={https://openreview.net/forum?id=I4c4K9vBNny}
 }
+```
+Note that you might need to include the following line in your latex file:
+
+```
+\usepackage[T1]{fontenc}
 ```
