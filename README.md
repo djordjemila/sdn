@@ -11,10 +11,10 @@
 <br>
 
 <div align="center">
-<img src="./figs/additional_samples/00.png" width="24.5%">
-<img src="./figs/additional_samples/01.png" width="24.5%">
-<img src="./figs/additional_samples/04.png" width="24.5%">
-<img src="./figs/additional_samples/10.png" width="24.5%">
+<img src="./figs/additional_samples/00.png" width="24%">
+<img src="./figs/additional_samples/01.png" width="24%">
+<img src="./figs/additional_samples/04.png" width="24%">
+<img src="./figs/additional_samples/10.png" width="24%">
 </div>
 <div align="center"> Example of SDN-VAE generated images. </div>
 
@@ -134,6 +134,7 @@ bash train_celeb.sh
 
 
 <details><summary>3DShapes</summary>
+  
 To obtain the dataset follow the instructions on this [GitHub repo](https://github.com/deepmind/3d-shapes#download-data-file-from-google-cloud-storage).
 Place it into the 'data/3DShapes' directory.
 To reproduce the experiments run:
