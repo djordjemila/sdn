@@ -91,7 +91,7 @@ To install all the requirements use:
 pip install -r requirements.txt
 ```
 
-*Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions as the library is not backward compatible.*
+*Note of caution: Ensure the right version of PyTorchLightning is used. We found multiple issues in the newer versions.*
 
 
 <details><summary>CIFAR10</summary>
