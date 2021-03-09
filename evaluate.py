@@ -9,6 +9,7 @@ import time
 import datetime
 from PIL import Image
 import numpy as np
+from torchvision.transforms import Compose, Resize
 
 
 @torch.no_grad()
@@ -26,9 +27,6 @@ def main(arguments=None):
     parser.add_argument('--batch', type=int, default=64, help='Batch size.')
     parser.add_argument('--importance_samples', type=int, default=1024, help='Importance samples.')
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers.')
-    parser.add_argument('--interpolation_ood', action='store_true')
-    parser.add_argument('--image1_path', type=str, default="figs/additional_samples/01.png")
-    parser.add_argument('--image2_path', type=str, default="figs/additional_samples/02.png")
     args = parser.parse_args(arguments.split()) if arguments else parser.parse_args()
 
     # configure device
@@ -38,7 +36,8 @@ def main(arguments=None):
     print("Loading checkpoint..")
     checkpoint = torch.load("checkpoints/" + args.model + ".ckpt", map_location=device)
     print("Hyper-parameters of the model:\n", checkpoint['hyper_parameters'])
-    checkpoint['hyper_parameters']['batch'] = args.batch   # change batch size accordingly
+    checkpoint['hyper_parameters']['batch'] = args.batch  # change batch size accordingly
+    checkpoint['hyper_parameters']['batch_val'] = args.batch   # change batch size accordingly
     checkpoint['hyper_parameters']['num_workers'] = args.num_workers  # change batch size accordingly
     # checkpoint['hyper_parameters']['evaluation_mode'] = True  # set evaluation mode to avoid loading trainset
     checkpoint['hyper_parameters']['figsize'] = 10
@@ -71,9 +70,9 @@ def main(arguments=None):
     # evaluate samples (at various temperatures)
     if args.sampling:
         print("Evaluating random samples...")
-        for temp in [0.8, 0.9]:
+        for temp in [0.6, 0.7]:
             samples = []
-            for i in range(10):
+            for i in range(50):
                 fig, sample = model.evaluate_sampling(num_vertical=1, num_horizontal=1, temperature=temp)
                 samples.append(sample)
             samples = np.array(samples)
@@ -91,7 +90,7 @@ def main(arguments=None):
         print("Evaluating latent interpolation...")
         times = 7
         for il in [4, 5]:
-            for temp in [0.9, 1.0]:
+            for temp in [0.6, 0.7]:
                 for i in range(64):
                     _, l = model.evaluate_latent_interpolation(times=times, interpolation_layer=il, temperature=temp)
                     image_path = args.model + ts + "_id-" + str(i) + "_il-" + str(il) + "_temp-" + str(temp)
@@ -112,44 +111,17 @@ def main(arguments=None):
 
     # testing for overfitting -- finding MSE-based closest neighbors in the training set
     if args.overfitting:
-        folder_path = "figs_paper/closest_neighbors/"
+        folder_path = "figs/closest_neighbors/"
         os.makedirs(folder_path, exist_ok=True)
         for i in range(3):
             for j in range(3):
                 transform = model.obs_model.get_transform()
-                image = transform(Image.open("figs_paper/sampling/" + str(i) + str(j) + ".png"))
+                image = transform(Image.open("figs/sampling/" + str(i) + str(j) + ".png"))
                 neighbors = model.evaluate_closest_neighbors(image.unsqueeze(0))
                 for idx, n in enumerate(neighbors):
                     image_path = str(i) + str(j) + "_neighbor-" + str(idx)
                     pil_img = Image.fromarray(np.transpose(n * 255, (1, 2, 0)).astype(np.uint8), 'RGB')
                     pil_img.save(folder_path + image_path + ".png")
-
-    # interpolation between two out-of-dataset images
-    if args.interpolation_ood:
-        folder_path = "figs/interpolation_ood/"
-        os.makedirs(folder_path, exist_ok=True)
-        for il in [2, 3, 4]:
-            for temp in [0.7, 0.9]:
-                from torchvision.transforms import Compose, Resize
-                transform = Compose([Resize(256), model.obs_model.get_transform()])
-                image1 = transform(Image.open(args.image1_path))
-                image2 = transform(Image.open(args.image2_path))
-                two_images = torch.cat([image1.unsqueeze(0), image2.unsqueeze(0)], dim=0)
-                model.evaluate_latent_interpolation_of_two_images(two_images, il, temp, 3)
-                plt.savefig(folder_path + ts + "il-" + str(il) + "_temp-" + str(temp) + "_interpolation.png")
-
-    """
-    if args.neighborhood_ood:
-    folder_path = "figs/interpolation_ood/"
-    os.makedirs(folder_path, exist_ok=True)
-    for fl in [2, 3, 4]:
-        for temp in [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]:
-            from torchvision.transforms import Compose, Resize
-            transform = Compose([Resize(256), model.obs_model.get_transform()])
-            image = transform(Image.open(args.image1_path))
-            model.evaluate_neighborhood_of_an_image(image.unsqueeze(0), fl, temp)
-            plt.savefig(folder_path + ts + "FL-" + str(fl) + "_TMP-" + str(temp) + "_neighborhood.png")
-    """
 
 
 if __name__ == '__main__':
