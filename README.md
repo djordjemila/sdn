@@ -166,8 +166,7 @@ miladinovi{\'c}2021spatial,
 title={Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling},
 author={{\DJ}or{\dj}e Miladinovi{\'c} and Aleksandar Stani{\'c} and Stefan Bauer and J{\"u}rgen Schmidhuber and Joachim M. Buhmann},
 booktitle={International Conference on Learning Representations},
-year={2021},
-url={https://openreview.net/forum?id=I4c4K9vBNny}
+year={2021}
 }
 ```
 Note that you might need to include the following line in your latex file:
