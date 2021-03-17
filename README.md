@@ -21,7 +21,7 @@
 
 ### Method Description
 
-[Spatial dependency network (SDN)](https://openreview.net/forum?id=I4c4K9vBNny) is a novel neural architecture. It is based on spatial dependency layers which are designed for stacking deep neural networks that
+[Spatial dependency network (SDN)](https://arxiv.org/abs/2103.08877) is a novel neural architecture. It is based on spatial dependency layers which are designed for stacking deep neural networks that
 produce images e.g. generative models such as VAEs or GANs or segmentation, super-resolution and image-to-image-translation neural networks.
 SDNs improve upon celebrated CNNs by explicitly modeling spatial dependencies between feature vectors at each level of a deep neural network pipeline.
 Spatial dependency layers (i) explicitly introduce the inductive bias of spatial coherence; and (ii) offer improved modeling of long-range dependencies 
