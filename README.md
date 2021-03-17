@@ -161,12 +161,13 @@ python3 evaluate.py --model CelebAHQ256 --elbo --sampling
 Please cite our paper if you use our code or if you re-implement our method:
 
 ```
-@inproceedings{
-miladinovi{\'c}2021spatial,
-title={Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling},
-author={{\DJ}or{\dj}e Miladinovi{\'c} and Aleksandar Stani{\'c} and Stefan Bauer and J{\"u}rgen Schmidhuber and Joachim M. Buhmann},
-booktitle={International Conference on Learning Representations},
-year={2021}
+@conference{miladinovic21sdn,
+  title = {Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling},
+  author = {Miladinović, {\DJ}. and Stanić, A. and Bauer, S. and Schmidhuber, J. and Buhmann, J. M.},
+  booktitle = {9th International Conference on Learning Representations (ICLR 2021)},
+  month = may,
+  year = {2021},
+  month_numeric = {5}
 }
 ```
 Note that you might need to include the following line in your latex file:
