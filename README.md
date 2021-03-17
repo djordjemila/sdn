@@ -163,7 +163,7 @@ Please cite our paper if you use our code or if you re-implement our method:
 ```
 @conference{miladinovic21sdn,
   title = {Spatial Dependency Networks: Neural Layers for Improved Generative Image Modeling},
-  author = {Miladinović, {\DJ}. and Stanić, A. and Bauer, S. and Schmidhuber, J. and Buhmann, J. M.},
+  author = {Miladinović, {\DJ}or{\dj}e and Stanić, Aleksandar and Bauer, Stefan and Schmidhuber, J{\"u}rgen and Buhmann, Joachim M.},
   booktitle = {9th International Conference on Learning Representations (ICLR 2021)},
   month = may,
   year = {2021},
